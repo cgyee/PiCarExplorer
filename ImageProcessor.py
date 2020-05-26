@@ -7,10 +7,10 @@ from time import sleep
 from queue import PriorityQueue
 
 class ImageProcessor(threading.Thread):
-    def __init__(self, pqueue):
+    def __init__(self, pqueue, seconds):
         super(ImageProcessor, self).__init__()
         self.start()
-        self.__seconds = 1
+        self.__seconds = seconds
         self.__queue = pqueue
 
     def run(self):
@@ -30,7 +30,6 @@ class ImageProcessor(threading.Thread):
                     format='rgb', use_video_port=True)):
 
                     if i == 30*self.__seconds:
-                        print(stream.array)
                         break
                     
                     images[i] = np.copy(stream.array)
