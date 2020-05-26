@@ -15,3 +15,4 @@ class DistanceTracking(threading.Thread):
             #    pqueue.put((1, "stop"))
             #    sleep(5)
             print("Distance: ", distanceSensor.distance)
+            sleep(.01)
