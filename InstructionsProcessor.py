@@ -23,7 +23,7 @@ class InstructionsProcessor(threading.Thread):
         data = [25]
         index = 0
         while True:
-           byte = self.__serialConnect.readline()
+           rc_byte = self.
            if(byte != 0x0F or byte != 0x00):
                data[index] = byte
                index +=1
