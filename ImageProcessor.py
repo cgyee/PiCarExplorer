@@ -21,7 +21,7 @@ class ImageProcessor(threading.Thread):
         #Check if the picamera is available and if it is execute the following code block
         with picamera.PiCamera() as camera:
             #Setting up the camerea
-            camera.resolution = (800, 600)
+            camera.resolution = (1920, 1080)
             camera.framerate = 30
             camera.start_recording('data/foo.h264')
             sleep(2)
