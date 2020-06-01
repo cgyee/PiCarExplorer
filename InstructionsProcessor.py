@@ -11,12 +11,12 @@ class InstructionsProcessor(threading.Thread):
     
     def __serialConnection(self):
         temp = serial.Serial(
-            port='/dev/serial0',
-            #port='/dev/ttyUSB0',
+            port='/dev/ttyUSB0',
             baudrate=100000,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
             bytesize=serial.EIGHTBITS,
+            timeout = None
         )
         return temp
 
@@ -45,7 +45,7 @@ class InstructionsProcessor(threading.Thread):
                 channels[1] = ((int.from_bytes(data[2], byteorder='big') >> 3 | int.from_bytes(data[3], byteorder='big') << 5) & 2047)
                 print("Errors: ", error_count)
                 print("Success terminated: ", success_count)
-                print("Ratio of success: ", success_count//(success_count+error_count))
+                print("Ratio of success: ", success_count/(success_count+error_count))
                 print("Channel 1: ", channels[0])
                 print("Channel 2: ", channels[1])
                 #print("stop")
