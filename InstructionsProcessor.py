@@ -1,17 +1,19 @@
 import serial
 import threading
-import _thread 
+import numpy as np
 from queue import Queue 
-from time import sleep
+from time import sleep, time
 
-class InstructionsProcessor(threading.Thread):
-    def __init__(self, pqueue):
+class InstructionsProcessor(object):
+    def __init__(self, pqueue, seconds):
         super(InstructionsProcessor, self).__init__()
-        self.__queue = pqueue
+        self.pqueue = pqueue
         self.__byteQueue = Queue(0)
-        self.__serialConnect = self.__serialConnection()
+        self.__serialConnect = self.__setSerialConnection()
+        self.__seconds = seconds
+        self.endTime = time() + seconds
     
-    def __serialConnection(self):
+    def __setSerialConnection(self):
         temp = serial.Serial(
             port='/dev/ttyUSB0',
             baudrate=100000,
@@ -23,15 +25,15 @@ class InstructionsProcessor(threading.Thread):
         return temp
     
     def run(self):
-        byteRead(self.__queue, self.__byteQueue)
-        byteWrite(self.__queue, self.__byteQueue)
+        byteRead(self.__byteQueue, self.__seconds)
+        byteWrite(self.__byteQueue, self.__seconds, self.pqueue)
     
-    def getConnection(self):
+    def getSerialConnection(self):
         return self.__serialConnect
 
-class byteRead(InstructionsProcessor):
-    def __init__(self,pq, queue):
-        super(byteRead, self).__init__(pq)
+class byteRead(InstructionsProcessor, threading.Thread):
+    def __init__(self, queue, seconds, priorityqueue = None):
+        super(byteRead, self).__init__(priorityqueue, seconds)
         self.__queue = queue
         self.start()
 
@@ -40,9 +42,11 @@ class byteRead(InstructionsProcessor):
         index = 0
         error_count= 0
         success_count =0
+
         print("Start...")
-        while True:
-            inBytes = self.getConnection().read()
+
+        while time() < self.endTime:
+            inBytes = self.getSerialConnection().read()
             if(inBytes!=b'\x0f' and index==0):
                 pass
             else:
@@ -57,18 +61,24 @@ class byteRead(InstructionsProcessor):
                 temp = data[:]
                 self.__queue.put(temp)
 
-class byteWrite(InstructionsProcessor):
-    def __init__(self, pq, queue):
-        super(byteWrite, self).__init__(pq)
+class byteWrite(InstructionsProcessor, threading.Thread):
+    def __init__(self, queue, seconds, priorityqueue):
+        super(byteWrite, self).__init__(priorityqueue, seconds)
         self.__queue = queue
         self.start()
 
     def run(self):
         outBytes = [0]*25
-        channels = [0]*2
-        while True:
+        #channels = [0]*2
+        channels = np.zeros((2,1))
+        
+        while time() < self.endTime:
             if not self.__queue.empty():
                 outBytes = self.__queue.get()
-                print("Data: ", outBytes)
+                channels[0] = ((int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047)
+                channels[1] = ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047)
+                self.pqueue.put((1, channels))
+                
+                #print("Data: ", outBytes)
                 print("Channel 1: ", ((int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047))
                 print("Channel 2: ", ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047))

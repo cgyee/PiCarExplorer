@@ -9,7 +9,6 @@ from queue import PriorityQueue
 class ImageProcessor(threading.Thread):
     def __init__(self, pqueue, seconds):
         super(ImageProcessor, self).__init__()
-        self.start()
         self.__seconds = seconds
         self.__queue = pqueue
 
@@ -29,24 +28,27 @@ class ImageProcessor(threading.Thread):
 
             #Defining np arrays for data storage of images and corresponding receiver instructions(labels)
             images = np.zeros([30*self.__seconds, 32, 32, 3])
-            labels = np.zeros([30*self.__seconds, ])
+            labels = np.zeros([30*self.__seconds, 2, 1 ])
 
             #Check if picamera is available and if it is execute the following code block
             with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
                 for i, fileName in enumerate(camera.capture_continuous(stream, resize=(32,32), 
                     format='rgb', use_video_port=True)):
-
+                    print(i)
                     #Break out of loop after caputuring 30 images * time to get around 30FPS of images
                     if i == 30*self.__seconds:
                         break
                     
                     images[i] = np.copy(stream.array)
-                    #labels[i] = self.__queue.get(True)
+                    data = self.__queue.get()
+                    labels[i,0] = data[1][0]
+                    labels[i,1] = data[1][1]
                     stream.truncate(0)
 
             camera.stop_recording()
 
             #Write the results to h5 file for later use
+            print("Writing")
             imageData.create_dataset("images", data=images, maxshape=(None, 32, 32, 3))
-            #imageData.create_dataset("labels", data=rc_instruction, maxshape=(None,))
+            imageData.create_dataset("labels", data=labels, maxshape=(None, 2, 1))
             imageData.close()
