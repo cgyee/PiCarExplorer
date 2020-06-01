@@ -13,4 +13,4 @@ if __name__ == "__main__":
     pqueue = PriorityQueue(maxsize=3)
     #ImageProcessor.ImageProcessor(pqueue, seconds)
     #distance.DistanceTracking(pqueue, seconds)
-    InstructionsProcessor.InstructionsProcessor(pqueue)
+    InstructionsProcessor.InstructionsProcessor(pqueue).start()

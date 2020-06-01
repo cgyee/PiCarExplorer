@@ -1,13 +1,15 @@
 import serial
 import threading
+import _thread 
+from queue import Queue 
 from time import sleep
 
 class InstructionsProcessor(threading.Thread):
     def __init__(self, pqueue):
         super(InstructionsProcessor, self).__init__()
         self.__queue = pqueue
+        self.__byteQueue = Queue(0)
         self.__serialConnect = self.__serialConnection()
-        self.start()
     
     def __serialConnection(self):
         temp = serial.Serial(
@@ -19,6 +21,19 @@ class InstructionsProcessor(threading.Thread):
             timeout = None
         )
         return temp
+    
+    def run(self):
+        byteRead(self.__queue, self.__byteQueue)
+        byteWrite(self.__queue, self.__byteQueue)
+    
+    def getConnection(self):
+        return self.__serialConnect
+
+class byteRead(InstructionsProcessor):
+    def __init__(self,pq, queue):
+        super(byteRead, self).__init__(pq)
+        self.__queue = queue
+        self.start()
 
     def run(self):
         data = [0]*25
@@ -27,12 +42,11 @@ class InstructionsProcessor(threading.Thread):
         success_count =0
         print("Start...")
         while True:
-            rc_bytes = self.__serialConnect.read()
-            if(rc_bytes!=b'\x0f' and index==0):
+            inBytes = self.getConnection().read()
+            if(inBytes!=b'\x0f' and index==0):
                 pass
             else:
-                data[index] = rc_bytes
-                print(rc_bytes, index)
+                data[index] = inBytes
                 index+=1
             if(index == 25):
                 if(data[24]) != b'\x00':
@@ -40,13 +54,21 @@ class InstructionsProcessor(threading.Thread):
                 else:
                     success_count+=1
                 index=0
-                channels = [0]*2
-                channels[0] = ((int.from_bytes(data[1], byteorder='big') | int.from_bytes(data[2], byteorder='big') << 8) & 2047)
-                channels[1] = ((int.from_bytes(data[2], byteorder='big') >> 3 | int.from_bytes(data[3], byteorder='big') << 5) & 2047)
-                print("Errors: ", error_count)
-                print("Success terminated: ", success_count)
-                print("Ratio of success: ", success_count/(success_count+error_count))
-                print("Channel 1: ", channels[0])
-                print("Channel 2: ", channels[1])
-                #print("stop")
-                #sleep(3)
+                temp = data[:]
+                self.__queue.put(temp)
+
+class byteWrite(InstructionsProcessor):
+    def __init__(self, pq, queue):
+        super(byteWrite, self).__init__(pq)
+        self.__queue = queue
+        self.start()
+
+    def run(self):
+        outBytes = [0]*25
+        channels = [0]*2
+        while True:
+            if not self.__queue.empty():
+                outBytes = self.__queue.get()
+                print("Data: ", outBytes)
+                print("Channel 1: ", ((int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047))
+                print("Channel 2: ", ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047))
