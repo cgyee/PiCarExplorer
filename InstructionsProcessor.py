@@ -7,7 +7,7 @@ from time import sleep
 class InstructionsProcessor(threading.Thread):
     def __init__(self, pqueue):
         super().__init__()
-        self.__queue = pqueue
+        self.__pqueue = pqueue
         self.serial = None
     
     def setup(self):
@@ -19,56 +19,46 @@ class InstructionsProcessor(threading.Thread):
             bytesize=serial.EIGHTBITS,
             timeout = None
         )
-        self.serial 
+        self.serial = cerial 
         
     
     def run(self):
-        byteRead(self.__queue, self.__byteQueue)
-        byteWrite(self.__queue, self.__byteQueue)
+        byteHelper = byteOrder()
+        self.__pqueue.put(
+           (2, 
+           byteHelper.setByte
+           (byteHelper.getByte
+           (self.serial))))
     
-    def getConnection(self):
-        return self.__serialConnect
-
-class byteRead(InstructionsProcessor):
-    def __init__(self,pq, queue):
-        super(byteRead, self).__init__(pq)
-        self.__queue = queue
-        self.start()
-
-    def run(self):
+class byteOrder():
+    def getByte(self, cnx):
         data = [0]*25
         index = 0
-        error_count= 0
-        success_count =0
-        print("Start...")
-        while True:
-            inBytes = self.getConnection().read()
+        error_count = 0
+        success_count = 0
+        print("Starting Reading...")
+        while index<25:
+            inBytes = cnx.read()
             if(inBytes!=b'\x0f' and index==0):
                 pass
             else:
                 data[index] = inBytes
                 index+=1
-            if(index == 25):
+            if(index==25):
                 if(data[24]) != b'\x00':
                     error_count+=1
                 else:
                     success_count+=1
-                index=0
-                temp = data[:]
-                self.__queue.put(temp)
+        print(data)
+        return data
 
-class byteWrite(InstructionsProcessor):
-    def __init__(self, pq, queue):
-        super(byteWrite, self).__init__(pq)
-        self.__queue = queue
-        self.start()
-
-    def run(self):
-        outBytes = [0]*25
-        channels = [0]*2
-        while True:
-            if not self.__queue.empty():
-                outBytes = self.__queue.get()
-                print("Data: ", outBytes)
-                print("Channel 1: ", ((int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047))
-                print("Channel 2: ", ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047))
+    def setByte(self, outBytes):
+        print("Starting Writing...")
+        channel = [0]*2
+        if outBytes != None:
+            #print("Data: ", outBytes)
+            #print("Channel 1: ", 
+            #print("Channel 2: ", ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047))
+            channel[0] = (int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047
+            channel[1] = (int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047
+        return channel

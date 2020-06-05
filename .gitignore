@@ -1,1 +1,5 @@
 ./env
+./data/
+createh5file.py
+data/foo.h264
+data/images.h5
