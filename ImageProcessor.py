@@ -8,36 +8,30 @@ from queue import PriorityQueue
 
 class ImageProcessor(threading.Thread):
     def __init__(self, pqueue):
-        super(ImageProcessor, self).__init__()
-        self.start()
-        self.__seconds = 1
-        self.__queue = pqueue
+        super().__init__()
+        self.__pqueue = pqueue
+
+    def setup(self):
+        pass
 
     def run(self):
-        imageData = h5py.File('data/images.h5', 'w')
+        if not self.__pqueue.empty():
+            images = np.zeros((1, 32 ,32, 3))
+            labels = np.zeros((1, 2))
+            with picamera.PiCamera() as camera:
+                with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
+                    print("Starting Capturing...")
+                    camera.capture(stream, resize=(32,32), format='rgb', use_video_port=True)
+                    images = np.copy(stream.array)
+                    temp = list(self.__pqueue.get())
+                    labels[0][0] = temp[1][0]
+                    labels[0][1] = temp[1][1]                    
+            fileWriter().writeToFile(images, labels)
 
-        with picamera.PiCamera() as camera:
-            camera.resolution = (800, 600)
-            camera.framerate = 30
-            camera.start_recording('data/foo.h264')
-            sleep(2)
-            camera.wait_recording(self.__seconds)
-
-            images = np.zeros([30*self.__seconds, 32, 32, 3])
-            labels = np.zeros([30*self.__seconds, ])
-            with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
-                for i, fileName in enumerate(camera.capture_continuous(stream, resize=(32,32), 
-                    format='rgb', use_video_port=True)):
-
-                    if i == 30*self.__seconds:
-                        print(stream.array)
-                        break
-                    
-                    images[i] = np.copy(stream.array)
-                    #labels[i] = self.__queue.get(True)
-                    stream.truncate(0)
-
-            camera.stop_recording()
-            imageData.create_dataset("images", data=images, maxshape=(None, 32, 32, 3))
-            #imageData.create_dataset("labels", data=rc_instruction, maxshape=(None,))
-            imageData.close()
+class fileWriter():
+    def writeToFile(self, images, labels):
+        with h5py.File('data/images.h5', 'a') as hf:
+            hf['images'].resize((hf['images'].shape[0]+images.shape[0]), axis=0)
+            hf['labels'].resize((hf['labels'].shape[0]+labels.shape[0]), axis=0)
+            hf['images'][hf['images'].shape[0]-1] = images
+            hf['labels'][hf['labels'].shape[0]-1] = labels

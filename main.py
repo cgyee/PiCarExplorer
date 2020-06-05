@@ -1,8 +1,29 @@
 import ImageProcessor
-import distance
+import cmdInterface
+import InstructionsProcessor
 from queue import PriorityQueue
+from time import time, sleep
+
+#x = cmdInterface.cmdInterface()
 
 if __name__ == "__main__":
-    pqueue = PriorityQueue(maxsize=3)
-    #ImageProcessor.ImageProcessor(pqueue)
-    #distance.DistanceTracking(pqueue)
+    #args = x.getArgs()
+    #seconds = int(args.s)
+    pqueue = PriorityQueue()
+    endTime = time()
+    image = ImageProcessor.ImageProcessor(pqueue)
+    instruct = InstructionsProcessor.InstructionsProcessor(pqueue)
+    sleep(2)
+    
+    instruct.setup()
+    image.setup()
+    instruct.start()
+    image.start()
+
+    while time() < endTime + 3:
+        instruct.run()
+        image.run()
+    print("Done!!!!")
+
+
+    
