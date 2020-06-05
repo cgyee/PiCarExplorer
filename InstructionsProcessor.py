@@ -4,7 +4,7 @@ import _thread
 from queue import Queue 
 from time import sleep
 
-class InstructionsProcessor(threading.Thread):
+class Receiver(threading.Thread):
     def __init__(self, pqueue):
         super().__init__()
         self.__pqueue = pqueue
@@ -23,12 +23,12 @@ class InstructionsProcessor(threading.Thread):
         
     
     def run(self):
-        byteHelper = byteOrder()
-        self.__pqueue.put(
-           (2, 
-           byteHelper.setByte
-           (byteHelper.getByte
-           (self.serial))))
+            byteHelper = byteOrder()
+            self.__pqueue.put(
+            (2, 
+            byteHelper.setByte
+            (byteHelper.getByte
+            (self.serial))))
     
 class byteOrder():
     def getByte(self, cnx):
@@ -52,13 +52,10 @@ class byteOrder():
         print(data)
         return data
 
-    def setByte(self, outBytes):
+    def setByte(self, inBytes):
         print("Starting Writing...")
         channel = [0]*2
-        if outBytes != None:
-            #print("Data: ", outBytes)
-            #print("Channel 1: ", 
-            #print("Channel 2: ", ((int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047))
-            channel[0] = (int.from_bytes(outBytes[1], byteorder='big') | int.from_bytes(outBytes[2], byteorder='big') << 8) & 2047
-            channel[1] = (int.from_bytes(outBytes[2], byteorder='big') >> 3 | int.from_bytes(outBytes[3], byteorder='big') << 5) & 2047
+        if inBytes != None:
+            channel[0] = (int.from_bytes(inBytes[1], byteorder='big') | int.from_bytes(inBytes[2], byteorder='big') << 8) & 2047
+            channel[1] = (int.from_bytes(inBytes[2], byteorder='big') >> 3 | int.from_bytes(inBytes[3], byteorder='big') << 5) & 2047
         return channel

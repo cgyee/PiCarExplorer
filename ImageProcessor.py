@@ -3,10 +3,11 @@ import picamera.array
 import numpy as np
 import h5py
 import threading
+import multiprocessing
 from time import sleep
 from queue import PriorityQueue
 
-class ImageProcessor(threading.Thread):
+class Camera(multiprocessing.Process):
     def __init__(self, pqueue):
         super().__init__()
         self.__pqueue = pqueue
