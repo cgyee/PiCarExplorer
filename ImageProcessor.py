@@ -7,46 +7,38 @@ from time import sleep
 from queue import PriorityQueue
 
 class ImageProcessor(threading.Thread):
-    def __init__(self, pqueue, seconds):
-        super(ImageProcessor, self).__init__()
-        self.start()
-        self.__seconds = seconds
-        self.__queue = pqueue
+    def __init__(self, pqueue):
+        super().__init__()
+        self.__pqueue = pqueue
+        self.__videoCamera = None
+        self.__captureCamera = None
 
-    #called when self.start() is called
-    def run(self):
-        #open h5 as a writeable file
-        imageData = h5py.File('data/images.h5', 'w')
-
-        #Check if the picamera is available and if it is execute the following code block
+    def setup(self):
         with picamera.PiCamera() as camera:
-            #Setting up the camerea
-            camera.resolution = (1920, 1080)
+            camera.resolution = (600, 600)
             camera.framerate = 30
-            camera.start_recording('data/foo.h264')
-            sleep(2)
-            camera.wait_recording(self.__seconds)
-
-            #Defining np arrays for data storage of images and corresponding receiver instructions(labels)
-            images = np.zeros([30*self.__seconds, 32, 32, 3])
-            labels = np.zeros([30*self.__seconds, ])
-
-            #Check if picamera is available and if it is execute the following code block
+            self.__videoCamera = camera
             with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
-                for i, fileName in enumerate(camera.capture_continuous(stream, resize=(32,32), 
-                    format='rgb', use_video_port=True)):
+                self.__captureCamera = stream
+    
+    def writeToFile(self):
+        with h5py.File('data/images.h5', 'a') as hf:
+            hf.resize(hf.shape[0][0]+30, axis = 0)
+        return h5py
 
-                    #Break out of loop after caputuring 30 images * time to get around 30FPS of images
-                    if i == 30*self.__seconds:
-                        break
-                    
-                    images[i] = np.copy(stream.array)
-                    #labels[i] = self.__queue.get(True)
-                    stream.truncate(0)
+    def run(self):
+        if not self.__pqueue.empty():
+            images = np.zeros((30, 32, 32, 3))
+            labels = np.zeros((30, 2, 1))
+            for i, fileName in enumerate(self.__videoCamera.capture_continous(self.__captureCamera, (32,32),
+            format='rgb', use_video_port = True)):
 
-            camera.stop_recording()
+                if(i == 30):
+                    break
+                
+                images[i] = np.copy(self.__captureCamera)
+                labels[i] = np.asarray(self.__pqueue.get())
 
-            #Write the results to h5 file for later use
-            imageData.create_dataset("images", data=images, maxshape=(None, 32, 32, 3))
-            #imageData.create_dataset("labels", data=rc_instruction, maxshape=(None,))
-            imageData.close()
+            out = writeToFile()
+            out['images'] = images
+            out['labels'] = labels

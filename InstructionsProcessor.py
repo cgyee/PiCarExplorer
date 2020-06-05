@@ -6,13 +6,12 @@ from time import sleep
 
 class InstructionsProcessor(threading.Thread):
     def __init__(self, pqueue):
-        super(InstructionsProcessor, self).__init__()
+        super().__init__()
         self.__queue = pqueue
-        self.__byteQueue = Queue(0)
-        self.__serialConnect = self.__serialConnection()
+        self.serial = None
     
-    def __serialConnection(self):
-        temp = serial.Serial(
+    def setup(self):
+        cerial = serial.Serial(
             port='/dev/ttyUSB0',
             baudrate=100000,
             parity=serial.PARITY_EVEN,
@@ -20,7 +19,8 @@ class InstructionsProcessor(threading.Thread):
             bytesize=serial.EIGHTBITS,
             timeout = None
         )
-        return temp
+        self.serial 
+        
     
     def run(self):
         byteRead(self.__queue, self.__byteQueue)
