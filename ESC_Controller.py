@@ -1,10 +1,8 @@
-import multiprocessing
 import threading
 import adafruit_servokit
-import adafruit_motor
 from time import sleep
 
-class ServoDriver(threading.Thread):
+class MotorDriver(threading.Thread):
     def __init__(self, pqueue):
         super().__init__()
         self.kit = adafruit_servokit.ServoKit(channels=16)
@@ -16,9 +14,9 @@ class ServoDriver(threading.Thread):
         pass
 
     def run(self):
-        self.setThrottleSteering()
+        self.__setThrottleSteering()
 
-    def setThrottleSteering(self):
+    def __getThrottleSteering(self):
         while self.__run:
             if not self.pqueue.empty():
                 data = self.pqueue.get()
@@ -33,9 +31,9 @@ class ServoDriver(threading.Thread):
 
     def stop(self):
         self.__run= False
-        self.stopMotor()
+        self.__stopMotor()
     
-    def stopMotor(self):
+    def __stopMotor(self):
         self.kit.continuous_servo[0].throttle=0
         sleep(1)
         print("Stop motor done")
