@@ -1,6 +1,7 @@
 import ImageProcessor
 import cmdInterface
 import InstructionsProcessor
+import ESC_Controller
 from queue import PriorityQueue
 from multiprocessing import Queue
 from time import time, sleep
@@ -12,18 +13,30 @@ if __name__ == "__main__":
     
     #q = PriorityQueue()
     q = Queue()
-    image = ImageProcessor.Camera(q)
+
+    #image = ImageProcessor.Camera(q)
     instruct = InstructionsProcessor.Receiver(q)
+    throttle = ESC_Controller.ServoDriver(q)
+
+    #image.setup()
     instruct.setup()
-    image.setup()
+    throttle.setup()
 
     startTime = time()
     endTime = time()
     
-    image.start()
+    #image.start()
     instruct.start()
+    throttle.start()
+    throttle.stopMotor()
+
     while time() < endTime + 3:
+        #image.run()
         instruct.run()
-        image.run()
+        throttle.run()
+    instruct.join()
+    throttle.stopMotor()
+    throttle.join()
+
 
     

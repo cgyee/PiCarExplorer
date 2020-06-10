@@ -1,5 +1,6 @@
-./env
-./data/
+env/
+data/
+pca.py
 createh5file.py
 data/foo.h264
 data/images.h5

@@ -58,4 +58,5 @@ class byteOrder():
         if inBytes != None:
             channel[0] = (int.from_bytes(inBytes[1], byteorder='big') | int.from_bytes(inBytes[2], byteorder='big') << 8) & 2047
             channel[1] = (int.from_bytes(inBytes[2], byteorder='big') >> 3 | int.from_bytes(inBytes[3], byteorder='big') << 5) & 2047
+            #print(channel)
         return channel
