@@ -11,32 +11,32 @@ if __name__ == "__main__":
     #args = x.getArgs()
     #seconds = int(args.s)
     
-    #q = PriorityQueue()
-    q = Queue()
+    q = PriorityQueue()
+    #q = Queue()
+    car = []
 
-    #image = ImageProcessor.Camera(q)
+    image = ImageProcessor.Camera(q)
     instruct = InstructionsProcessor.Receiver(q)
     throttle = ESC_Controller.ServoDriver(q)
-
-    #image.setup()
-    instruct.setup()
-    throttle.setup()
+    car.append(instruct)
+    car.append(throttle)
+    #car.append(image)
 
     startTime = time()
     endTime = time()
     
     #image.start()
-    instruct.start()
-    throttle.start()
-    throttle.stopMotor()
+    #instruct.start()
+    #throttle.start()
 
+    for components in car:
+        components.setup()
+        components.start() 
     while time() < endTime + 3:
-        #image.run()
-        instruct.run()
-        throttle.run()
-    instruct.join()
-    throttle.stopMotor()
-    throttle.join()
+        pass
+    for components in car:
+        components.stop()
+        components.join()
 
 
     

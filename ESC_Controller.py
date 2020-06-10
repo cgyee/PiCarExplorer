@@ -10,6 +10,7 @@ class ServoDriver(threading.Thread):
         self.kit = adafruit_servokit.ServoKit(channels=16)
         self.pqueue = pqueue
         self.__last_speed=0
+        self.__run = True
 
     def setup(self):
         pass
@@ -18,19 +19,23 @@ class ServoDriver(threading.Thread):
         self.setThrottleSteering()
 
     def setThrottleSteering(self):
-        if not self.pqueue.empty():
-            data = self.pqueue.get()
-            if data[1][0] > 1024:
-                self.__last_speed= .1
+        while self.__run:
+            if not self.pqueue.empty():
+                data = self.pqueue.get()
+                if data[1][0] > 1024:
+                    self.__last_speed= .1
+                else:
+                    self.__last_speed= -.1
+                print("Throttle and Steering", (data[1][0]//1024)*.5, self.__last_speed)
+                self.kit.continuous_servo[0].throttle= self.__last_speed
             else:
-                self.__last_speed= -.2
-            print("Throttle and Steering", (data[1][0]//1024)*.5)
-            self.kit.continuous_servo[0].throttle=self.__last_speed
-        else:
-            self.kit.continuous_servo[0].throttle = self.__last_speed
+                self.kit.continuous_servo[0].throttle= self.__last_speed
 
+    def stop(self):
+        self.__run= False
+        self.stopMotor()
+    
     def stopMotor(self):
-        self.kit.continuous_servo[0].throttle = 0
+        self.kit.continuous_servo[0].throttle=0
         sleep(1)
         print("Stop motor done")
-        self.join()

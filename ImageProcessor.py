@@ -7,27 +7,32 @@ import multiprocessing
 from time import sleep
 from queue import PriorityQueue
 
-class Camera(multiprocessing.Process):
+class Camera(threading.Thread):
     def __init__(self, pqueue):
         super().__init__()
-        self.__pqueue = pqueue
+        self.__pqueue= pqueue
+        self.__run= True
 
     def setup(self):
         pass
 
     def run(self):
-        if not self.__pqueue.empty():
-            images = np.zeros((1, 32 ,32, 3))
-            labels = np.zeros((1, 2))
-            with picamera.PiCamera() as camera:
-                with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
-                    print("Starting Capturing...")
-                    camera.capture(stream, resize=(32,32), format='rgb', use_video_port=True)
-                    images = np.copy(stream.array)
-                    temp = list(self.__pqueue.get())
-                    labels[0][0] = temp[1][0]
-                    labels[0][1] = temp[1][1]                    
-            fileWriter().writeToFile(images, labels)
+        while self.__run:
+            if not self.__pqueue.empty():
+                images = np.zeros((1, 32 ,32, 3))
+                labels = np.zeros((1, 2))
+                with picamera.PiCamera() as camera:
+                    with picamera.array.PiRGBArray(camera, size = (32,32)) as stream:
+                        print("Starting Capturing...")
+                        camera.capture(stream, resize=(32,32), format='rgb', use_video_port=True)
+                        images = np.copy(stream.array)
+                        temp = list(self.__pqueue.get())
+                        labels[0][0] = temp[1][0]
+                        labels[0][1] = temp[1][1]                    
+                fileWriter().writeToFile(images, labels)
+    
+    def stop(self):
+        self.__run= False
 
 class fileWriter():
     def writeToFile(self, images, labels):

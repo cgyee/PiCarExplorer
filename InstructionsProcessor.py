@@ -9,6 +9,7 @@ class Receiver(threading.Thread):
         super().__init__()
         self.__pqueue = pqueue
         self.serial = None
+        self.__run = True
     
     def setup(self):
         cerial = serial.Serial(
@@ -24,11 +25,15 @@ class Receiver(threading.Thread):
     
     def run(self):
             byteHelper = byteOrder()
-            self.__pqueue.put(
-            (2, 
-            byteHelper.setByte
-            (byteHelper.getByte
-            (self.serial))))
+            while self.__run:
+                self.__pqueue.put(
+                (2, 
+                byteHelper.setByte
+                (byteHelper.getByte
+                (self.serial))))
+    
+    def stop(self):
+        self.__run =False
     
 class byteOrder():
     def getByte(self, cnx):
