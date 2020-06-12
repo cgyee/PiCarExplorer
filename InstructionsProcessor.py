@@ -13,7 +13,8 @@ class Receiver(threading.Thread):
     
     def setup(self):
         cerial = serial.Serial(
-            port='/dev/ttyUSB0',
+            #port='/dev/ttyUSB0',
+            port='/dev/serial0',
             baudrate=100000,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
@@ -36,16 +37,17 @@ class Receiver(threading.Thread):
         self.__run= False
     
 class ByteHelper():
-    self.__data= np.zeros((2))
-    self.__index= 0 
-    self.__error_count= 0
-    self.__success_count= 0
+    def __init__(self):
+        self.__data= [0]*25
+        self.__index= 0 
+        self.__error_count= 0
+        self.__success_count= 0
 
     def getByte(self, cnx):
         print("Starting Reading...")
         while self.__index<25:
             inBytes = cnx.read()
-            if(inBytes!=b'\x0f' and index==0):
+            if(inBytes!=b'\x0f' and self.__index==0):
                 pass
             else:
                 self.__data[self.__index] = inBytes
@@ -61,7 +63,7 @@ class ByteHelper():
 
     def setByte(self, inBytes):
         print("Starting Writing...")
-        channel = np.zeros(2)
+        channel = [0]*2
         if inBytes != None:
             channel[0] = (int.from_bytes(inBytes[1], byteorder='big') | int.from_bytes(inBytes[2], byteorder='big') << 8) & 2047
             channel[1] = (int.from_bytes(inBytes[2], byteorder='big') >> 3 | int.from_bytes(inBytes[3], byteorder='big') << 5) & 2047

@@ -14,7 +14,8 @@ class MotorDriver(threading.Thread):
         pass
 
     def run(self):
-        self.__setThrottleSteering()
+        #self.__setThrottleSteering()
+        self.__getThrottleSteeringLinear()
 
     def __getThrottleSteering(self):
         while self.__run:
@@ -24,10 +25,21 @@ class MotorDriver(threading.Thread):
                     self.__last_speed= .1
                 else:
                     self.__last_speed= -.1
-                print("Throttle and Steering", (data[1][0]//1024)*.5, self.__last_speed)
+                print("Throttle and Steering", (data[1][0]//1024), self.__last_speed)
                 self.kit.continuous_servo[0].throttle= self.__last_speed
             else:
                 self.kit.continuous_servo[0].throttle= self.__last_speed
+
+    def __getThrottleSteeringLinear(self):
+        while self.__run:
+            if not self.pqueue.empty():
+                data = self.pqueue.get()
+                self.__last_speed= (data[1][0]-1024)/1024
+                print("Throttle and Steering", (data[1][0]//1024), self.__last_speed)
+                self.kit.continuous_servo[0].throttle= self.__last_speed
+            else:
+                self.kit.continuous_servo[0].throttle= self.__last_speed
+
 
     def stop(self):
         self.__run= False
@@ -35,5 +47,5 @@ class MotorDriver(threading.Thread):
     
     def __stopMotor(self):
         self.kit.continuous_servo[0].throttle=0
-        sleep(1)
+        sleep(2)
         print("Stop motor done")
